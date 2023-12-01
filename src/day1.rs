@@ -27,15 +27,15 @@ fn combine_first_and_last_digit(line_digits: &[u32]) -> u32 {
 
 fn replace_spelled_out_digits(input: &str) -> String {
     input
-        .replace("one", "1")
-        .replace("two", "2")
-        .replace("three", "3")
-        .replace("four", "4")
-        .replace("five", "5")
-        .replace("six", "6")
-        .replace("seven", "7")
-        .replace("eight", "8")
-        .replace("nine", "9")
+        .replace("one", "one1one")
+        .replace("two", "two2two")
+        .replace("three", "three3three")
+        .replace("four", "four4four")
+        .replace("five", "five5five")
+        .replace("six", "six6six")
+        .replace("seven", "seven7seven")
+        .replace("eight", "eight8eight")
+        .replace("nine", "nine9nine")
 }
 
 use crate::solution::Solution;
