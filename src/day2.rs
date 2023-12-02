@@ -1,11 +1,6 @@
 pub fn p1(input: &str) -> String {
-    let game_sum: usize = input
-        .trim()
-        .split("\n")
-        .map(|line| {
-            line.parse::<Game>()
-                .expect(&format!("Failed to parse game from line: {}", line))
-        })
+    let game_sum: usize = parse_input(input)
+        .into_iter()
         .filter(is_p1_possible)
         .map(|game| game.id)
         .sum();
@@ -13,8 +8,24 @@ pub fn p1(input: &str) -> String {
     format!("Game ID sum: {}", game_sum)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let power_set_sum: u32 = parse_input(input)
+        .into_iter()
+        .map(|game| game.fewest_number_of_cubes().power_set())
+        .sum();
+
+    format!("Power set sum: {}", power_set_sum)
+}
+
+fn parse_input(input: &str) -> Vec<Game> {
+    input
+        .trim()
+        .split("\n")
+        .map(|line| {
+            line.parse::<Game>()
+                .expect(&format!("Failed to parse game from line: {}", line))
+        })
+        .collect()
 }
 
 fn is_p1_possible(game: &Game) -> bool {
@@ -50,7 +61,17 @@ impl FromStr for Game {
     }
 }
 
-#[derive(Debug)]
+impl Game {
+    fn fewest_number_of_cubes(&self) -> Handful {
+        self.handfuls
+            .clone()
+            .into_iter()
+            .reduce(|acc, element| acc.union(&element))
+            .unwrap()
+    }
+}
+
+#[derive(Debug, Clone)]
 struct Handful(HashMap<Color, u32>);
 
 impl FromStr for Handful {
@@ -68,6 +89,30 @@ impl FromStr for Handful {
             .collect();
 
         Ok(Handful(handful))
+    }
+}
+
+impl Handful {
+    fn union(&self, other: &Self) -> Self {
+        Self(
+            [Color::Red, Color::Green, Color::Blue]
+                .into_iter()
+                .map(|color| {
+                    (
+                        color,
+                        *self
+                            .0
+                            .get(&color)
+                            .unwrap_or(&0)
+                            .max(other.0.get(&color).unwrap_or(&0)),
+                    )
+                })
+                .collect(),
+        )
+    }
+
+    fn power_set(&self) -> u32 {
+        self.0.values().product()
     }
 }
 
