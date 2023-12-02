@@ -1,9 +1,30 @@
 pub fn p1(input: &str) -> String {
-    todo!();
+    let game_sum: usize = input
+        .trim()
+        .split("\n")
+        .map(|line| {
+            line.parse::<Game>()
+                .expect(&format!("Failed to parse game from line: {}", line))
+        })
+        .filter(is_p1_possible)
+        .map(|game| game.id)
+        .sum();
+
+    format!("Game ID sum: {}", game_sum)
 }
 
 pub fn p2(_input: &str) -> String {
     todo!();
+}
+
+fn is_p1_possible(game: &Game) -> bool {
+    game.handfuls.iter().all(handful_is_p1_possible)
+}
+
+fn handful_is_p1_possible(handful: &Handful) -> bool {
+    *handful.0.get(&Color::Red).unwrap_or(&0) <= 12
+        && *handful.0.get(&Color::Green).unwrap_or(&0) <= 13
+        && *handful.0.get(&Color::Blue).unwrap_or(&0) <= 14
 }
 
 #[derive(Debug)]
