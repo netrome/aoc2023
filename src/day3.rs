@@ -7,14 +7,31 @@ pub fn p1(input: &str) -> String {
         .map(|number| number.value)
         .sum();
 
-    format!("Part number sum: {:?}", sum)
+    format!("Part number sum: {}", sum)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let grid = CharGrid::from_input(input);
+    let mut stars = HashMap::new();
+
+    for number in grid.find_numbers() {
+        for star in grid.adjacent_stars(&number) {
+            stars.entry(star).or_insert(Vec::new()).push(number.value);
+        }
+    }
+
+    let sum: u32 = stars
+        .values()
+        .filter_map(|adjacent_numbers| match adjacent_numbers.as_slice() {
+            [first, second] => Some(first * second),
+            _ => None,
+        })
+        .sum();
+
+    format!("Gear ratio sum: {}", sum)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 struct Number {
     pos: Pos,
     length: usize,
@@ -132,6 +149,14 @@ impl CharGrid {
             .neighbors()
             .into_iter()
             .any(|pos| self.get(&pos) != '.')
+    }
+
+    fn adjacent_stars(&self, number: &Number) -> Vec<Pos> {
+        number
+            .neighbors()
+            .into_iter()
+            .filter(|pos| self.get(&pos) == '*')
+            .collect()
     }
 
     fn get(&self, pos: &Pos) -> char {
