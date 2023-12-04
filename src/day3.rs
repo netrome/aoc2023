@@ -70,7 +70,7 @@ impl Number {
 #[derive(Debug)]
 struct CharGrid {
     grid: HashMap<Pos, char>,
-    width: usize,
+    _width: usize,
     height: usize,
 }
 
@@ -96,7 +96,7 @@ impl CharGrid {
             .collect();
 
         Self {
-            width,
+            _width: width,
             height,
             grid,
         }
@@ -185,7 +185,7 @@ impl Pos {
         }
     }
 
-    fn neighbors(self) -> [Self; 8] {
+    fn _neighbors(self) -> [Self; 8] {
         [
             self.add_x(1),
             self.add_x(1).add_y(1),

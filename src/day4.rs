@@ -84,10 +84,7 @@ impl FromStr for Card {
     }
 }
 
-use std::{
-    collections::{BTreeSet, HashSet},
-    str::FromStr,
-};
+use std::str::FromStr;
 
 use crate::solution::Solution;
 inventory::submit!(Solution::new(4, 1, p1));
