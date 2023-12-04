@@ -8,26 +8,48 @@ pub fn p1(input: &str) -> String {
     format!("Total points: {}", total_points)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let mut cards: Vec<Card> = input
+        .trim()
+        .lines()
+        .map(|line| line.parse::<Card>().unwrap())
+        .collect();
+
+    for idx in 0..cards.len() {
+        let card = cards.get(idx).unwrap().clone();
+
+        for idx2 in (idx + 1)..(idx + card.number_of_winning_numbers() + 1) {
+            cards
+                .get_mut(idx2)
+                .expect("Could not find card at index")
+                .copies += card.copies;
+        }
+    }
+
+    let number_of_cards: usize = cards.into_iter().map(|card| card.copies).sum();
+
+    format!("Total scratchcards: {}", number_of_cards)
 }
 
+#[derive(Debug, Clone)]
 struct Card {
-    id: usize,
+    _id: usize,
+    copies: usize,
     winning_numbers: Vec<u32>,
     numbers_you_have: Vec<u32>,
 }
 
 impl Card {
-    fn value(&self) -> u32 {
-        let winning_numbers_you_have: Vec<u32> = self
-            .numbers_you_have
+    fn number_of_winning_numbers(&self) -> usize {
+        self.numbers_you_have
             .iter()
             .cloned()
             .filter(|number| self.winning_numbers.contains(number))
-            .collect();
+            .count()
+    }
 
-        match winning_numbers_you_have.len() {
+    fn value(&self) -> u32 {
+        match self.number_of_winning_numbers() {
             0 => 0,
             len => 2_u32.pow(len as u32 - 1),
         }
@@ -51,8 +73,11 @@ impl FromStr for Card {
             .map(|s| s.parse().unwrap())
             .collect();
 
+        let copies = 1;
+
         Ok(Self {
-            id,
+            _id: id,
+            copies,
             winning_numbers,
             numbers_you_have,
         })
