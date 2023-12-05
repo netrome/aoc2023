@@ -118,8 +118,8 @@ impl Map {
     }
 
     fn map_range(&self, source_range: SourceRange) -> Vec<SourceRange> {
-        //println!("Map: {:?}", &self);
-        //println!("Source range: {:?}", &source_range);
+        println!("Map: {:?}", &self);
+        println!("Source range: {:?}", &source_range);
 
         let unmapped_below = self
             .ranges
@@ -143,8 +143,8 @@ impl Map {
             .chain(unmapped_above.into_iter())
             .collect();
 
-        //println!("Mapped ranges: {:?}", mapped_ranges);
-        //println!("---");
+        println!("Mapped ranges: {:?}", mapped_ranges);
+        println!("---");
 
         mapped_ranges
     }
@@ -229,9 +229,17 @@ impl Range {
     }
 
     fn mapped_range(&self, source_range: SourceRange) -> Option<SourceRange> {
-        let start = source_range.start.max(self.source_start);
+        let translation = self.destination_start.abs_diff(self.source_start);
+
+        let source_intersection_start = source_range.start.max(self.source_start);
         let end = (source_range.start + source_range.length).min(self.source_start + self.length);
-        let length = end.checked_sub(start)?;
+        let length = end.checked_sub(source_intersection_start)?;
+
+        let start = if self.destination_start > self.source_start {
+            source_intersection_start + translation
+        } else {
+            source_intersection_start - translation
+        };
 
         Some(SourceRange { start, length })
     }
