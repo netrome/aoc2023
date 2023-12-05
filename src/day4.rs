@@ -62,7 +62,7 @@ impl FromStr for Card {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (_, id, list_1, list_2) =
             sscanf::sscanf!(s.trim(), "Card{String}{usize}: {String} | {String}")
-                .expect(&format!("Failed to scan string: {}", s));
+                .unwrap_or_else(|_| panic!("Failed to scan string: {}", s));
 
         let winning_numbers = list_1
             .split_whitespace()

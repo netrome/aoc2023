@@ -20,10 +20,10 @@ pub fn p2(input: &str) -> String {
 fn parse_input(input: &str) -> Vec<Game> {
     input
         .trim()
-        .split("\n")
+        .split('\n')
         .map(|line| {
             line.parse::<Game>()
-                .expect(&format!("Failed to parse game from line: {}", line))
+                .unwrap_or_else(|_| panic!("Failed to parse game from line: {}", line))
         })
         .collect()
 }
@@ -52,8 +52,7 @@ impl FromStr for Game {
             sscanf::sscanf!(s, "Game {usize}: {String}").expect("Failed to scan game");
 
         let handfuls = handfuls_unparsed
-            .split(";")
-            .into_iter()
+            .split(';')
             .map(Handful::from_str)
             .collect::<Result<_, _>>()?;
 
@@ -80,8 +79,7 @@ impl FromStr for Handful {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let handful = s
             .trim()
-            .split(",")
-            .into_iter()
+            .split(',')
             .map(|entry| {
                 sscanf::sscanf!(entry.trim(), "{u32} {Color}").expect("Failed to scan cubes")
             })

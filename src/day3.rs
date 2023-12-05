@@ -114,7 +114,7 @@ impl CharGrid {
         let mut cursor = Pos { x: 0, y: line };
 
         while let Some(mut c) = self.grid.get(&cursor).cloned() {
-            let pos = cursor.clone();
+            let pos = cursor;
 
             let mut digits = Vec::new();
             let mut length = 0;
@@ -155,7 +155,7 @@ impl CharGrid {
         number
             .neighbors()
             .into_iter()
-            .filter(|pos| self.get(&pos) == '*')
+            .filter(|pos| self.get(pos) == '*')
             .collect()
     }
 

@@ -54,10 +54,9 @@ pub fn p2(input: &str) -> String {
 }
 
 fn parse_seeds(s: &str) -> Vec<u64> {
-    s.split(":")
+    s.split(':')
         .last()
         .unwrap()
-        .trim()
         .split_whitespace()
         .map(|digit_str| digit_str.parse().expect("Not a digit"))
         .collect()
@@ -137,7 +136,7 @@ impl Map {
                     .iter()
                     .filter_map(|range| range.mapped_range(source_range)),
             )
-            .chain(unmapped_above.into_iter())
+            .chain(unmapped_above)
             .filter(|range| range.length != 0)
             .collect();
 
