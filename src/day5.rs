@@ -64,7 +64,7 @@ fn parse_seeds(s: &str) -> Vec<u64> {
 }
 
 struct ChainedMap {
-    source: String,
+    _source: String,
     destination: String,
     maps: Vec<Map>,
 }
@@ -95,7 +95,7 @@ impl ChainedMap {
 impl From<Map> for ChainedMap {
     fn from(value: Map) -> Self {
         Self {
-            source: value.source.clone(),
+            _source: value.source.clone(),
             destination: value.destination.clone(),
             maps: vec![value],
         }
@@ -118,9 +118,6 @@ impl Map {
     }
 
     fn map_range(&self, source_range: SourceRange) -> Vec<SourceRange> {
-        println!("Map: {:?}", &self);
-        println!("Source range: {:?}", &source_range);
-
         let unmapped_below = self
             .ranges
             .first()
@@ -143,9 +140,6 @@ impl Map {
             .chain(unmapped_above.into_iter())
             .filter(|range| range.length != 0)
             .collect();
-
-        println!("Mapped ranges: {:?}", mapped_ranges);
-        println!("---");
 
         assert_eq!(
             source_range.length,
