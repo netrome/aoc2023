@@ -21,8 +21,36 @@ pub fn p1(input: &str) -> String {
     format!("Lowest location: {}", lowest_location)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let mut input_iter = input.trim().split("\n\n");
+
+    let seeds: Vec<u32> = parse_seeds(input_iter.next().expect("No seed line"));
+    let seed_ranges: Vec<SourceRange> = seeds
+        .windows(2)
+        .map(|window| SourceRange {
+            start: *window.first().unwrap(),
+            length: *window.last().unwrap(),
+        })
+        .collect();
+
+    let maps: Vec<Map> = input_iter.map(|input| input.parse().unwrap()).collect();
+
+    let init_chained_map: ChainedMap = maps.first().unwrap().clone().into();
+
+    let chained_map = maps
+        .into_iter()
+        .skip(1)
+        .fold(init_chained_map, |chained_map, map| chained_map.chain(map));
+
+    let mapped_ranges = chained_map.map_ranges(seed_ranges);
+
+    let lowest_location = mapped_ranges
+        .into_iter()
+        .map(|range| range.start)
+        .min()
+        .expect("No range");
+
+    format!("Lowest location: {}", lowest_location)
 }
 
 fn parse_seeds(s: &str) -> Vec<u32> {
@@ -54,6 +82,14 @@ impl ChainedMap {
     fn map(&self, source: u32) -> u32 {
         self.maps.iter().fold(source, |acc, map| map.map(acc))
     }
+
+    fn map_ranges(&self, source_ranges: Vec<SourceRange>) -> Vec<SourceRange> {
+        self.maps.iter().fold(source_ranges, |acc, map| {
+            acc.into_iter()
+                .flat_map(|source_range| map.map_range(source_range))
+                .collect()
+        })
+    }
 }
 
 impl From<Map> for ChainedMap {
@@ -80,6 +116,32 @@ impl Map {
             .find_map(|range| range.try_map(source))
             .unwrap_or(source)
     }
+
+    fn map_range(&self, source_range: SourceRange) -> Vec<SourceRange> {
+        let unmapped_below = self
+            .ranges
+            .first()
+            .expect("No first range")
+            .unmapped_range_below(source_range);
+
+        let unmapped_above = self
+            .ranges
+            .last()
+            .expect("No last range")
+            .unmapped_range_above(source_range);
+
+        let mapped_ranges = unmapped_below
+            .into_iter()
+            .chain(
+                self.ranges
+                    .iter()
+                    .filter_map(|range| range.mapped_range(source_range)),
+            )
+            .chain(unmapped_above.into_iter())
+            .collect();
+
+        mapped_ranges
+    }
 }
 
 impl FromStr for Map {
@@ -93,9 +155,11 @@ impl FromStr for Map {
         )
         .expect("Failed to parse map header");
 
-        let ranges = lines
+        let mut ranges: Vec<Range> = lines
             .map(|line| line.parse().expect("Failed to parse range"))
             .collect();
+
+        ranges.sort_by_key(|range| range.source_start);
 
         Ok(Self {
             source,
@@ -137,9 +201,45 @@ impl Range {
             None
         }
     }
+
+    fn unmapped_range_below(&self, source_range: SourceRange) -> Option<SourceRange> {
+        let diff = self.source_start.checked_sub(source_range.start)?;
+        let length = source_range.length.min(diff);
+
+        Some(SourceRange {
+            start: source_range.start,
+            length,
+        })
+    }
+
+    fn unmapped_range_above(&self, source_range: SourceRange) -> Option<SourceRange> {
+        let diff = (source_range.start + source_range.length)
+            .checked_sub(self.source_start + self.length)?;
+
+        let start = (self.source_start + self.length).max(source_range.start);
+        let length = source_range.length.min(diff);
+
+        Some(SourceRange { start, length })
+    }
+
+    fn mapped_range(&self, source_range: SourceRange) -> Option<SourceRange> {
+        let start = source_range.start.max(self.source_start);
+        let end = (source_range.start + source_range.length).min(self.source_start + self.length);
+        let length = end.checked_sub(start)?;
+
+        Some(SourceRange { start, length })
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+struct SourceRange {
+    start: u32,
+    length: u32,
 }
 
 use std::str::FromStr;
+
+use itertools::Itertools;
 
 use crate::solution::Solution;
 inventory::submit!(Solution::new(5, 1, p1));
