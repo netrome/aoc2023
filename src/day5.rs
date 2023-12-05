@@ -26,7 +26,7 @@ pub fn p2(input: &str) -> String {
 
     let seeds: Vec<u64> = parse_seeds(input_iter.next().expect("No seed line"));
     let seed_ranges: Vec<SourceRange> = seeds
-        .windows(2)
+        .chunks(2)
         .map(|window| SourceRange {
             start: *window.first().unwrap(),
             length: *window.last().unwrap(),
@@ -133,7 +133,7 @@ impl Map {
             .expect("No last range")
             .unmapped_range_above(source_range);
 
-        let mapped_ranges = unmapped_below
+        let mapped_ranges: Vec<SourceRange> = unmapped_below
             .into_iter()
             .chain(
                 self.ranges
@@ -145,6 +145,11 @@ impl Map {
 
         println!("Mapped ranges: {:?}", mapped_ranges);
         println!("---");
+
+        assert_eq!(
+            source_range.length,
+            mapped_ranges.iter().map(|range| range.length).sum::<u64>()
+        );
 
         mapped_ranges
     }
@@ -252,8 +257,6 @@ struct SourceRange {
 }
 
 use std::str::FromStr;
-
-use itertools::Itertools;
 
 use crate::solution::Solution;
 inventory::submit!(Solution::new(5, 1, p1));
