@@ -141,6 +141,7 @@ impl Map {
                     .filter_map(|range| range.mapped_range(source_range)),
             )
             .chain(unmapped_above.into_iter())
+            .filter(|range| range.length != 0)
             .collect();
 
         println!("Mapped ranges: {:?}", mapped_ranges);
@@ -170,6 +171,24 @@ impl FromStr for Map {
             .map(|line| line.parse().expect("Failed to parse range"))
             .collect();
 
+        ranges.sort_by_key(|range| range.source_start);
+
+        let mut patches = Vec::new();
+
+        for couple in ranges.windows(2) {
+            let first = couple.first().unwrap();
+            let second = couple.last().unwrap();
+
+            if first.source_start + first.length != second.source_start {
+                patches.push(Range {
+                    source_start: first.source_start + first.length,
+                    length: second.source_start - first.source_start - first.length,
+                    destination_start: first.source_start + first.length,
+                })
+            }
+        }
+
+        ranges.extend_from_slice(&patches);
         ranges.sort_by_key(|range| range.source_start);
 
         Ok(Self {
