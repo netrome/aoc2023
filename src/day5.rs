@@ -1,7 +1,7 @@
 pub fn p1(input: &str) -> String {
     let mut input_iter = input.trim().split("\n\n");
 
-    let seeds: Vec<u32> = parse_seeds(input_iter.next().expect("No seed line"));
+    let seeds: Vec<u64> = parse_seeds(input_iter.next().expect("No seed line"));
 
     let maps: Vec<Map> = input_iter.map(|input| input.parse().unwrap()).collect();
 
@@ -24,7 +24,7 @@ pub fn p1(input: &str) -> String {
 pub fn p2(input: &str) -> String {
     let mut input_iter = input.trim().split("\n\n");
 
-    let seeds: Vec<u32> = parse_seeds(input_iter.next().expect("No seed line"));
+    let seeds: Vec<u64> = parse_seeds(input_iter.next().expect("No seed line"));
     let seed_ranges: Vec<SourceRange> = seeds
         .windows(2)
         .map(|window| SourceRange {
@@ -53,7 +53,7 @@ pub fn p2(input: &str) -> String {
     format!("Lowest location: {}", lowest_location)
 }
 
-fn parse_seeds(s: &str) -> Vec<u32> {
+fn parse_seeds(s: &str) -> Vec<u64> {
     s.split(":")
         .last()
         .unwrap()
@@ -79,7 +79,7 @@ impl ChainedMap {
         self
     }
 
-    fn map(&self, source: u32) -> u32 {
+    fn map(&self, source: u64) -> u64 {
         self.maps.iter().fold(source, |acc, map| map.map(acc))
     }
 
@@ -110,7 +110,7 @@ struct Map {
 }
 
 impl Map {
-    fn map(&self, source: u32) -> u32 {
+    fn map(&self, source: u64) -> u64 {
         self.ranges
             .iter()
             .find_map(|range| range.try_map(source))
@@ -118,6 +118,9 @@ impl Map {
     }
 
     fn map_range(&self, source_range: SourceRange) -> Vec<SourceRange> {
+        //println!("Map: {:?}", &self);
+        //println!("Source range: {:?}", &source_range);
+
         let unmapped_below = self
             .ranges
             .first()
@@ -139,6 +142,9 @@ impl Map {
             )
             .chain(unmapped_above.into_iter())
             .collect();
+
+        //println!("Mapped ranges: {:?}", mapped_ranges);
+        //println!("---");
 
         mapped_ranges
     }
@@ -171,9 +177,9 @@ impl FromStr for Map {
 
 #[derive(Debug, Clone)]
 struct Range {
-    source_start: u32,
-    destination_start: u32,
-    length: u32,
+    source_start: u64,
+    destination_start: u64,
+    length: u64,
 }
 
 impl FromStr for Range {
@@ -181,7 +187,7 @@ impl FromStr for Range {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (destination_start, source_start, length) =
-            sscanf::sscanf!(s.trim(), "{u32} {u32} {u32}").expect("Failed to read range");
+            sscanf::sscanf!(s.trim(), "{u64} {u64} {u64}").expect("Failed to read range");
 
         Ok(Self {
             source_start,
@@ -192,7 +198,7 @@ impl FromStr for Range {
 }
 
 impl Range {
-    fn try_map(&self, source: u32) -> Option<u32> {
+    fn try_map(&self, source: u64) -> Option<u64> {
         let offset = source.checked_sub(self.source_start)?;
 
         if offset < self.length {
@@ -233,8 +239,8 @@ impl Range {
 
 #[derive(Debug, Clone, Copy)]
 struct SourceRange {
-    start: u32,
-    length: u32,
+    start: u64,
+    length: u64,
 }
 
 use std::str::FromStr;
