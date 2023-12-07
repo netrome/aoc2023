@@ -18,7 +18,7 @@ pub fn p1(input: &str) -> String {
 }
 
 pub fn p2(input: &str) -> String {
-    let input = input.trim().replace(" ", "").replace(":", " ");
+    let input = input.trim().replace(' ', "").replace(':', " ");
     p1(&input)
 }
 
