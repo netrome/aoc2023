@@ -2,27 +2,29 @@ pub fn p1(input: &str) -> String {
     let sum: i64 = input
         .lines()
         .map(read_line)
-        .map(|c| extrapolate(&c))
+        .map(|seq| extrapolate(&current_value_with_all_diffs(&all_diffs(seq))))
         .map(|seq| *seq.last().unwrap())
         .sum();
 
     format!("Sum: {}", sum)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let sum: i64 = input
+        .lines()
+        .map(read_line)
+        .map(|seq| extrapolate_backwards(&first_value_with_backward_diffs(&all_diffs(seq))))
+        .map(|seq| *seq.last().unwrap())
+        .sum();
+
+    format!("Sum: {}", sum)
 }
 
 fn read_line(line: &str) -> Vec<i64> {
-    let values = line
-        .trim()
+    line.trim()
         .split_whitespace()
         .map(|s| s.parse().unwrap())
-        .collect();
-
-    let diffs = all_diffs(values);
-    let current = current_value_with_all_diffs(&diffs);
-    current
+        .collect()
 }
 
 fn diff(seq: &[i64]) -> Vec<i64> {
@@ -50,6 +52,14 @@ fn current_value_with_all_diffs(diffs: &[Vec<i64>]) -> Vec<i64> {
         .collect()
 }
 
+fn first_value_with_backward_diffs(diffs: &[Vec<i64>]) -> Vec<i64> {
+    diffs
+        .iter()
+        .rev()
+        .map(|seq| *seq.first().expect("Empty sequence"))
+        .collect()
+}
+
 fn extrapolate(current: &[i64]) -> Vec<i64> {
     let mut cumsum = 0;
 
@@ -57,6 +67,19 @@ fn extrapolate(current: &[i64]) -> Vec<i64> {
         .iter()
         .map(|val| {
             cumsum += val;
+            cumsum
+        })
+        .collect()
+}
+
+fn extrapolate_backwards(first: &[i64]) -> Vec<i64> {
+    let mut cumsum = 0;
+
+    first
+        .iter()
+        .map(|val| {
+            cumsum -= val;
+            cumsum *= -1;
             cumsum
         })
         .collect()
