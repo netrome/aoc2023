@@ -22,7 +22,8 @@ struct Maze {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Pipe {
-    connections: [Position; 2],
+    a: Position,
+    b: Position,
 }
 
 impl Maze {
@@ -82,14 +83,26 @@ impl Maze {
             + 1
     }
 
+    fn enclosed_tiles(&self) -> usize {
+        let tiles = self.enclosed_tile_candidates();
+        let mut rotations = vec![0.0; tiles.len()];
+
+        for pair in self.corner_walk().windows(2) {
+            for (idx, tile) in tiles.iter().enumerate() {
+                let v2 = pair[1] - tile;
+                let v1 = pair[0] - tile;
+
+                rotations[idx] += angle(v1, v2);
+            }
+        }
+
+        rotations.into_iter().filter(|rot| rot.abs() > PI).count()
+    }
+
     fn walk(&self, reverse: bool) -> Vec<Position> {
         let entry_pipe = self.pipes.get(&self.animal_entry).expect("No entry pipe");
 
-        let direction = if reverse {
-            entry_pipe.connections[1]
-        } else {
-            entry_pipe.connections[0]
-        };
+        let direction = if reverse { entry_pipe.a } else { entry_pipe.b };
 
         let mut current = (self.animal_entry, direction);
         let mut positions = vec![self.animal_entry];
@@ -119,7 +132,7 @@ impl Maze {
             .collect()
     }
 
-    fn maybe_enclosed_tiles(&self) -> Vec<Position> {
+    fn enclosed_tile_candidates(&self) -> Vec<Position> {
         let main_loop: HashSet<Position> = self.walk(false).into_iter().collect();
 
         let (x, y) = self
@@ -142,29 +155,11 @@ impl Maze {
             .filter(|pos| !main_loop.contains(pos))
             .collect()
     }
-
-    fn enclosed_tiles(&self) -> usize {
-        let tiles = self.maybe_enclosed_tiles();
-        let mut rotations = vec![0.0; tiles.len()];
-
-        for pair in self.corner_walk().windows(2) {
-            for (idx, tile) in tiles.iter().enumerate() {
-                let v2 = pair[1] - tile;
-                let v1 = pair[0] - tile;
-
-                rotations[idx] += angle(v1, v2);
-            }
-        }
-
-        rotations.into_iter().filter(|rot| rot.abs() > PI).count()
-    }
 }
 
 impl Pipe {
-    fn new(first: Direction, second: Direction) -> Self {
-        Self {
-            connections: [first, second],
-        }
+    fn new(a: Direction, b: Direction) -> Self {
+        Self { a, b }
     }
 
     fn animal_placeholder() -> Self {
@@ -172,22 +167,21 @@ impl Pipe {
     }
 
     fn connects(&self, pipe: Position, target: Position) -> bool {
-        self.connections.iter().any(|c| pipe + c == target)
+        pipe + self.a == target || pipe + self.b == target
     }
 
     fn next_direction(&self, dir: Direction) -> Direction {
-        let [first, second] = self.connections;
         let opposite = dir * -1;
 
-        match (opposite == first, opposite == second) {
-            (true, false) => second,
-            (false, true) => first,
+        match (opposite == self.a, opposite == self.b) {
+            (true, false) => self.b,
+            (false, true) => self.a,
             _ => panic!("One cannot simply walk here"),
         }
     }
 
     fn is_corner(&self) -> bool {
-        (self.connections[0] * self.connections[1]).im != 0
+        (self.a * self.b).im != 0
     }
 }
 
