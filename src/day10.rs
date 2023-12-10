@@ -17,8 +17,6 @@ pub fn p2(input: &str) -> String {
 #[derive(Debug)]
 struct Maze {
     pipes: HashMap<Position, Pipe>,
-    width: usize,
-    height: usize,
     animal_entry: Position,
 }
 
@@ -42,9 +40,6 @@ impl Maze {
                 })
             })
             .collect();
-
-        let height = input.lines().count();
-        let width = input.lines().next().unwrap().trim().len();
 
         let animal_entry = *pipes
             .iter()
@@ -74,8 +69,6 @@ impl Maze {
         Self {
             pipes,
             animal_entry,
-            height,
-            width,
         }
     }
 
@@ -142,17 +135,32 @@ impl Maze {
             .collect()
     }
 
-    fn non_loop_tiles(&self) -> Vec<Position> {
+    fn maybe_enclosed_tiles(&self) -> Vec<Position> {
         let main_loop: HashSet<Position> = self.walk().into_iter().collect();
 
-        (0..self.width)
-            .flat_map(|re| (0..self.height).map(move |im| Position::new(re as i64, im as i64)))
+        let (x, y) = self
+            .corner_walk()
+            .into_iter()
+            .fold((Vec::new(), Vec::new()), |mut acc, c| {
+                acc.0.push(c.re);
+                acc.1.push(c.im);
+                acc
+            });
+
+        let min_x = x.iter().min().unwrap() + 1;
+        let max_x = x.iter().max().unwrap();
+
+        let min_y = y.iter().min().unwrap() + 1;
+        let max_y = y.iter().max().unwrap();
+
+        (min_x..*max_x)
+            .flat_map(|re| (min_y..*max_y).map(move |im| Position::new(re as i64, im as i64)))
             .filter(|pos| !main_loop.contains(pos))
             .collect()
     }
 
     fn enclosed_tiles(&self) -> usize {
-        let tiles = self.non_loop_tiles();
+        let tiles = self.maybe_enclosed_tiles();
         let mut rotations = vec![0.0; tiles.len()];
 
         for pair in self.corner_walk().windows(2) {
