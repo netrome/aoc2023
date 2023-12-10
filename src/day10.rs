@@ -6,13 +6,19 @@ pub fn p1(input: &str) -> String {
     format!("Distance: {:?}", dist)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let maze = Maze::from_input(input);
+
+    let n = maze.enclosed_tiles();
+
+    format!("Enclosed tiles: {:?}", n)
 }
 
 #[derive(Debug)]
 struct Maze {
     pipes: HashMap<Position, Pipe>,
+    width: usize,
+    height: usize,
     animal_entry: Position,
 }
 
@@ -36,6 +42,9 @@ impl Maze {
                 })
             })
             .collect();
+
+        let height = input.lines().count();
+        let width = input.lines().next().unwrap().trim().len();
 
         let animal_entry = *pipes
             .iter()
@@ -65,6 +74,8 @@ impl Maze {
         Self {
             pipes,
             animal_entry,
+            height,
+            width,
         }
     }
 
@@ -99,6 +110,62 @@ impl Maze {
 
         distance
     }
+
+    fn walk(&self) -> Vec<Position> {
+        let entry_pipe = self.pipes.get(&self.animal_entry).expect("No entry pipe");
+
+        let mut current = (self.animal_entry, entry_pipe.connections[0]);
+        let mut positions = vec![self.animal_entry];
+
+        loop {
+            current.0 += current.1;
+            current.1 = self
+                .pipes
+                .get(&current.0)
+                .expect("No pipe")
+                .next_direction(current.1);
+
+            positions.push(current.0);
+
+            if current.0 == self.animal_entry {
+                break;
+            }
+        }
+
+        positions
+    }
+
+    fn corner_walk(&self) -> Vec<Position> {
+        self.walk()
+            .into_iter()
+            .filter(|pos| self.pipes.get(pos).expect("No pipe").is_corner())
+            .collect()
+    }
+
+    fn non_loop_tiles(&self) -> Vec<Position> {
+        let main_loop: HashSet<Position> = self.walk().into_iter().collect();
+
+        (0..self.width)
+            .flat_map(|re| (0..self.height).map(move |im| Position::new(re as i64, im as i64)))
+            .filter(|pos| !main_loop.contains(pos))
+            .collect()
+    }
+
+    fn enclosed_tiles(&self) -> usize {
+        let tiles = self.non_loop_tiles();
+        let mut rotations = vec![0.0; tiles.len()];
+
+        for (idx, pair) in self.corner_walk().windows(2).enumerate() {
+            for (idx, tile) in tiles.iter().enumerate() {
+                let v2 = pair[1] - tile;
+                let v1 = pair[0] - tile;
+
+                rotations[idx] += trunc_arg_diff(v1, v2);
+            }
+        }
+
+        rotations.into_iter().filter(|rot| rot.abs() > PI).count()
+    }
 }
 
 impl Pipe {
@@ -125,6 +192,10 @@ impl Pipe {
             (false, true) => first,
             _ => panic!("One cannot simply walk here"),
         }
+    }
+
+    fn is_corner(&self) -> bool {
+        (self.connections[0] * self.connections[1]).im != 0
     }
 }
 
@@ -153,9 +224,29 @@ static EAST: Direction = Direction::new(1, 0);
 static WEST: Direction = Direction::new(-1, 0);
 static DIRECTIONS: [Direction; 4] = [NORTH, SOUTH, EAST, WEST];
 
-use std::collections::HashMap;
+fn arg(pos: Position) -> f64 {
+    let pos_as_float = Complex64::new(pos.re as f64, pos.im as f64);
+    pos_as_float.arg()
+}
 
-use num::Complex;
+fn trunc_arg_diff(v1: Position, v2: Position) -> f64 {
+    let diff = arg(v2) - arg(v1);
+
+    if diff < -PI {
+        diff + 2. * PI
+    } else if diff > PI {
+        diff - 2. * PI
+    } else {
+        diff
+    }
+}
+
+use std::{
+    collections::{HashMap, HashSet},
+    f64::consts::PI,
+};
+
+use num::{complex::Complex64, Complex};
 
 use crate::solution::Solution;
 inventory::submit!(Solution::new(10, 1, p1));
