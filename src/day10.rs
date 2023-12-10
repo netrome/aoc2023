@@ -155,12 +155,12 @@ impl Maze {
         let tiles = self.non_loop_tiles();
         let mut rotations = vec![0.0; tiles.len()];
 
-        for (idx, pair) in self.corner_walk().windows(2).enumerate() {
+        for pair in self.corner_walk().windows(2) {
             for (idx, tile) in tiles.iter().enumerate() {
                 let v2 = pair[1] - tile;
                 let v1 = pair[0] - tile;
 
-                rotations[idx] += trunc_arg_diff(v1, v2);
+                rotations[idx] += angle(v1, v2);
             }
         }
 
@@ -224,13 +224,13 @@ static EAST: Direction = Direction::new(1, 0);
 static WEST: Direction = Direction::new(-1, 0);
 static DIRECTIONS: [Direction; 4] = [NORTH, SOUTH, EAST, WEST];
 
-fn arg(pos: Position) -> f64 {
+fn arg_as_float(pos: Position) -> f64 {
     let pos_as_float = Complex64::new(pos.re as f64, pos.im as f64);
     pos_as_float.arg()
 }
 
-fn trunc_arg_diff(v1: Position, v2: Position) -> f64 {
-    let diff = arg(v2) - arg(v1);
+fn angle(v1: Position, v2: Position) -> f64 {
+    let diff = arg_as_float(v2) - arg_as_float(v1);
 
     if diff < -PI {
         diff + 2. * PI
