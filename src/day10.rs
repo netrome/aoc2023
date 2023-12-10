@@ -1,7 +1,7 @@
 pub fn p1(input: &str) -> String {
     let maze = Maze::from_input(input);
 
-    let dist = maze.distance_to_farthest_connecting_pipe_from_animal_entry();
+    let dist = maze.farthest_distance();
 
     format!("Distance: {:?}", dist)
 }
@@ -72,42 +72,26 @@ impl Maze {
         }
     }
 
-    fn distance_to_farthest_connecting_pipe_from_animal_entry(&self) -> usize {
-        let entry_pipe = self.pipes.get(&self.animal_entry).expect("No entry pipe");
-
-        let mut distance: usize = 0;
-        let mut left = (self.animal_entry, entry_pipe.connections[0]);
-        let mut right = (self.animal_entry, entry_pipe.connections[1]);
-
-        loop {
-            left.0 += left.1;
-            right.0 += right.1;
-            distance += 1;
-
-            if left.0 == right.0 {
-                break;
-            }
-
-            left.1 = self
-                .pipes
-                .get(&left.0)
-                .expect("No pipe")
-                .next_direction(left.1);
-
-            right.1 = self
-                .pipes
-                .get(&right.0)
-                .expect("No pipe")
-                .next_direction(right.1);
-        }
-
-        distance
+    fn farthest_distance(&self) -> usize {
+        self.walk(false)
+            .into_iter()
+            .zip(self.walk(true))
+            .skip(1)
+            .take_while(|(left, right)| left != right)
+            .count()
+            + 1
     }
 
-    fn walk(&self) -> Vec<Position> {
+    fn walk(&self, reverse: bool) -> Vec<Position> {
         let entry_pipe = self.pipes.get(&self.animal_entry).expect("No entry pipe");
 
-        let mut current = (self.animal_entry, entry_pipe.connections[0]);
+        let direction = if reverse {
+            entry_pipe.connections[1]
+        } else {
+            entry_pipe.connections[0]
+        };
+
+        let mut current = (self.animal_entry, direction);
         let mut positions = vec![self.animal_entry];
 
         loop {
@@ -129,14 +113,14 @@ impl Maze {
     }
 
     fn corner_walk(&self) -> Vec<Position> {
-        self.walk()
+        self.walk(false)
             .into_iter()
             .filter(|pos| self.pipes.get(pos).expect("No pipe").is_corner())
             .collect()
     }
 
     fn maybe_enclosed_tiles(&self) -> Vec<Position> {
-        let main_loop: HashSet<Position> = self.walk().into_iter().collect();
+        let main_loop: HashSet<Position> = self.walk(false).into_iter().collect();
 
         let (x, y) = self
             .corner_walk()
