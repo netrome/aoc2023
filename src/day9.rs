@@ -21,8 +21,7 @@ pub fn p2(input: &str) -> String {
 }
 
 fn read_line(line: &str) -> Vec<i64> {
-    line.trim()
-        .split_whitespace()
+    line.split_whitespace()
         .map(|s| s.parse().unwrap())
         .collect()
 }

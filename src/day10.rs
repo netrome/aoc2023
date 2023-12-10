@@ -151,7 +151,7 @@ impl Maze {
         let max_y = y.iter().max().unwrap();
 
         (min_x..*max_x)
-            .flat_map(|re| (min_y..*max_y).map(move |im| Position::new(re as i64, im as i64)))
+            .flat_map(|re| (min_y..*max_y).map(move |im| Position::new(re, im)))
             .filter(|pos| !main_loop.contains(pos))
             .collect()
     }
