@@ -28,15 +28,9 @@ fn solve(input: &str, expansion_factor: usize) -> String {
 
     let sum: f64 = stars
         .iter()
-        .flat_map(|s1| {
-            stars.iter().map(move |s2| {
-                if s1 != s2 {
-                    (s2.im - s1.im).abs() + (s2.re - s1.re).abs()
-                } else {
-                    0.
-                }
-            })
-        })
+        .flat_map(|s1| stars.iter().map(move |s2| (*s1, *s2)))
+        .filter(|pair| pair.0 != pair.1)
+        .map(manhattan_distance)
         .sum();
 
     format!("Sum: {}", sum / 2.)
@@ -61,6 +55,10 @@ fn expand_stars(mut stars: Vec<Pos>, key: impl Fn(&mut Pos) -> &mut f64, factor:
             acc
         })
         .2
+}
+
+fn manhattan_distance(pair: (Pos, Pos)) -> f64 {
+    (pair.0.im - pair.1.im).abs() + (pair.0.re - pair.1.re).abs()
 }
 
 type Pos = Complex64;
