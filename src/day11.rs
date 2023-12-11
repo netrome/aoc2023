@@ -1,4 +1,12 @@
 pub fn p1(input: &str) -> String {
+    solve(input, 1)
+}
+
+pub fn p2(input: &str) -> String {
+    solve(input, 999999)
+}
+
+fn solve(input: &str, expansion_factor: usize) -> String {
     let mut stars: Vec<Pos> = input
         .trim()
         .lines()
@@ -20,8 +28,8 @@ pub fn p1(input: &str) -> String {
     let mut stars = stars
         .into_iter()
         .fold((0., Pos::new(0., 0.), Vec::new()), |mut acc, star| {
-            let expansion = (star.re - acc.1.re - 1.).max(0.);
-            acc.0 += expansion;
+            let expansion = (star.re - acc.1.re - 1.).max(0.) * expansion_factor as f64;
+            acc.0 += expansion - 1.;
             acc.1 = star;
             let next = Pos::new(star.re + acc.0, star.im);
             acc.2.push(next);
@@ -35,8 +43,8 @@ pub fn p1(input: &str) -> String {
     let stars = stars
         .into_iter()
         .fold((0., Pos::new(0., 0.), Vec::new()), |mut acc, star| {
-            let expansion = (star.im - acc.1.im - 1.).max(0.);
-            acc.0 += expansion;
+            let expansion = (star.im - acc.1.im - 1.).max(0.) * expansion_factor as f64;
+            acc.0 += expansion - 1.;
             acc.1 = star;
             let next = Pos::new(star.re, star.im + acc.0);
             acc.2.push(next);
@@ -59,10 +67,6 @@ pub fn p1(input: &str) -> String {
         .sum();
 
     format!("Sum: {}", sum / 2.)
-}
-
-pub fn p2(_input: &str) -> String {
-    todo!();
 }
 
 type Pos = Complex64;
