@@ -7,20 +7,9 @@ pub fn p2(input: &str) -> String {
 }
 
 fn solve(input: &str, expansion_factor: usize) -> String {
-    let stars: Vec<Pos> = input
-        .trim()
-        .lines()
-        .rev()
-        .enumerate()
-        .flat_map(|(im, line)| {
-            line.trim().chars().enumerate().filter_map(move |(re, c)| {
-                if c == '#' {
-                    Some(Pos::new(re as f64, im as f64))
-                } else {
-                    None
-                }
-            })
-        })
+    let stars: Vec<Pos> = crate::parse::char_grid_iter::<char>(input)
+        .filter(|(_, _, c)| *c == '#')
+        .map(|(x, y, _)| Pos::new(x as f64, y as f64))
         .collect();
 
     let stars = expand_stars(stars, |s| &mut s.re, expansion_factor as f64);
@@ -42,7 +31,7 @@ fn expand_stars(mut stars: Vec<Pos>, key: impl Fn(&mut Pos) -> &mut f64, factor:
     stars
         .into_iter()
         .fold((0., Pos::new(0., 0.), Vec::new()), |mut acc, mut star| {
-            let old = star.clone();
+            let old = star;
             let to_expand = key(&mut star);
             let expansion = (*to_expand - *key(&mut acc.1) - 1.).max(0.) * (factor - 1.);
 
