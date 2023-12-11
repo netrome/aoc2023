@@ -1,13 +1,13 @@
 pub fn p1(input: &str) -> String {
-    solve(input, 1)
+    solve(input, 2)
 }
 
 pub fn p2(input: &str) -> String {
-    solve(input, 999999)
+    solve(input, 1000000)
 }
 
 fn solve(input: &str, expansion_factor: usize) -> String {
-    let mut stars: Vec<Pos> = input
+    let stars: Vec<Pos> = input
         .trim()
         .lines()
         .rev()
@@ -23,35 +23,8 @@ fn solve(input: &str, expansion_factor: usize) -> String {
         })
         .collect();
 
-    stars.sort_by_key(|star| star.re as usize);
-
-    let mut stars = stars
-        .into_iter()
-        .fold((0., Pos::new(0., 0.), Vec::new()), |mut acc, star| {
-            let expansion = (star.re - acc.1.re - 1.).max(0.) * expansion_factor as f64;
-            acc.0 += expansion - 1.;
-            acc.1 = star;
-            let next = Pos::new(star.re + acc.0, star.im);
-            acc.2.push(next);
-
-            acc
-        })
-        .2;
-
-    stars.sort_by_key(|star| star.im as usize);
-
-    let stars = stars
-        .into_iter()
-        .fold((0., Pos::new(0., 0.), Vec::new()), |mut acc, star| {
-            let expansion = (star.im - acc.1.im - 1.).max(0.) * expansion_factor as f64;
-            acc.0 += expansion - 1.;
-            acc.1 = star;
-            let next = Pos::new(star.re, star.im + acc.0);
-            acc.2.push(next);
-
-            acc
-        })
-        .2;
+    let stars = expand_stars(stars, |s| &mut s.re, expansion_factor as f64);
+    let stars = expand_stars(stars, |s| &mut s.im, expansion_factor as f64);
 
     let sum: f64 = stars
         .iter()
@@ -67,6 +40,27 @@ fn solve(input: &str, expansion_factor: usize) -> String {
         .sum();
 
     format!("Sum: {}", sum / 2.)
+}
+
+fn expand_stars(mut stars: Vec<Pos>, key: impl Fn(&mut Pos) -> &mut f64, factor: f64) -> Vec<Pos> {
+    stars.sort_by_key(|star| *key(&mut star.clone()) as usize);
+
+    stars
+        .into_iter()
+        .fold((0., Pos::new(0., 0.), Vec::new()), |mut acc, mut star| {
+            let old = star.clone();
+            let to_expand = key(&mut star);
+            let expansion = (*to_expand - *key(&mut acc.1) - 1.).max(0.) * (factor - 1.);
+
+            acc.0 += expansion;
+            acc.1 = old;
+            *to_expand += acc.0;
+
+            acc.2.push(star);
+
+            acc
+        })
+        .2
 }
 
 type Pos = Complex64;
