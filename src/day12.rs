@@ -37,7 +37,12 @@ struct Row {
 
 impl Row {
     fn number_of_possible_arrangements(&self) -> usize {
-        number_of_matches(&self.condition_records, &self.groups, 0)
+        number_of_matches(
+            &mut HashMap::new(),
+            &self.condition_records,
+            &self.groups,
+            0,
+        )
     }
 
     fn unfold(&mut self) {
@@ -69,13 +74,31 @@ fn is_match2(condition_records: &[char], at: usize, len: usize) -> bool {
     edges_could_be_operational && springs_could_be_damaged
 }
 
-fn number_of_matches(condition_records: &[char], groups: &[usize], start: usize) -> usize {
+fn number_of_matches(
+    cache: &mut HashMap<(usize, usize), usize>,
+    condition_records: &[char],
+    groups: &[usize],
+    start: usize,
+) -> usize {
     if let Some((group, remaining_groups)) = groups.split_first() {
         let mut ans = 0;
         let remaining_len: usize = remaining_groups.iter().sum();
         for at in start..(condition_records.len() - group - remaining_len + 1) {
             if is_match2(condition_records, at, *group) {
-                ans += number_of_matches(condition_records, remaining_groups, at + *group + 1);
+                let next_at = at + *group + 1;
+                if let Some(cached) = cache.get(&(remaining_len, next_at)) {
+                    ans += cached
+                } else {
+                    let val = number_of_matches(
+                        cache,
+                        condition_records,
+                        remaining_groups,
+                        at + *group + 1,
+                    );
+
+                    cache.insert((remaining_len, next_at), val);
+                    ans += val
+                }
             }
 
             if condition_records[at] == '#' {
@@ -111,7 +134,7 @@ impl FromStr for Row {
     }
 }
 
-use std::str::FromStr;
+use std::{collections::HashMap, str::FromStr};
 
 use crate::solution::Solution;
 inventory::submit!(Solution::new(12, 1, p1));
