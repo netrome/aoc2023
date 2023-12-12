@@ -24,7 +24,7 @@ pub fn p2(input: &str) -> String {
 
     let sum: usize = rows
         .into_iter()
-        .map(|row| dbg!(row.number_of_possible_arrangements()))
+        .map(|row| row.number_of_possible_arrangements())
         .sum();
 
     format!("Sum: {}", sum)
@@ -48,6 +48,7 @@ impl Row {
     fn unfold(&mut self) {
         let mut condition_records = self.condition_records.clone();
         let mut groups = self.groups.clone();
+
         for _ in 0..4 {
             condition_records.push('?');
             condition_records.extend_from_slice(&self.condition_records);
@@ -57,21 +58,6 @@ impl Row {
         self.condition_records = condition_records;
         self.groups = groups;
     }
-}
-
-fn is_match2(condition_records: &[char], at: usize, len: usize) -> bool {
-    let edges_could_be_operational = *condition_records
-        .get(at.checked_sub(1).unwrap_or(usize::MAX))
-        .unwrap_or(&'.')
-        != '#'
-        && *condition_records.get(at + len).unwrap_or(&'.') != '#';
-
-    let springs_could_be_damaged = condition_records
-        .get(at..at + len)
-        .map(|slice| slice.len() == len && slice.iter().all(|c| *c != '.'))
-        .unwrap_or(false);
-
-    edges_could_be_operational && springs_could_be_damaged
 }
 
 fn number_of_matches(
@@ -84,7 +70,7 @@ fn number_of_matches(
         let mut ans = 0;
         let remaining_len: usize = remaining_groups.iter().sum();
         for at in start..(condition_records.len() - group - remaining_len + 1) {
-            if is_match2(condition_records, at, *group) {
+            if is_match(condition_records, at, *group) {
                 let next_at = at + *group + 1;
                 if let Some(cached) = cache.get(&(remaining_len, next_at)) {
                     ans += cached
@@ -109,9 +95,24 @@ fn number_of_matches(
     } else {
         condition_records
             .get(start..)
-            .map(|slice| !slice.into_iter().any(|c| *c == '#'))
+            .map(|slice| !slice.iter().any(|c| *c == '#'))
             .unwrap_or(true) as usize
     }
+}
+
+fn is_match(condition_records: &[char], at: usize, len: usize) -> bool {
+    let edges_could_be_operational = *condition_records
+        .get(at.checked_sub(1).unwrap_or(usize::MAX))
+        .unwrap_or(&'.')
+        != '#'
+        && *condition_records.get(at + len).unwrap_or(&'.') != '#';
+
+    let springs_could_be_damaged = condition_records
+        .get(at..at + len)
+        .map(|slice| slice.len() == len && slice.iter().all(|c| *c != '.'))
+        .unwrap_or(false);
+
+    edges_could_be_operational && springs_could_be_damaged
 }
 
 impl FromStr for Row {
@@ -180,6 +181,6 @@ mod tests {
     }
 
     fn match_str(rec: &str, at: usize, len: usize) -> bool {
-        is_match2(&rec.chars().collect::<Vec<_>>(), at, len)
+        is_match(&rec.chars().collect::<Vec<_>>(), at, len)
     }
 }
