@@ -13,8 +13,19 @@ pub fn p1(input: &str) -> String {
     format!("Sum: {}", sum)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let patterns: Vec<Pattern> = input
+        .trim()
+        .split("\n\n")
+        .map(|line| line.parse().unwrap())
+        .collect();
+
+    let sum: i64 = patterns
+        .into_iter()
+        .map(|mut pattern| pattern.summarize_p2())
+        .sum();
+
+    format!("Sum: {}", sum)
 }
 
 struct Pattern {
@@ -23,49 +34,87 @@ struct Pattern {
     height: usize,
 }
 
+impl std::fmt::Debug for Pattern {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let lines: Vec<String> = (0..self.height)
+            .map(|y| {
+                (0..self.width)
+                    .map(|x| self.grid.get(&Pos::new(x as i64, y as i64)).unwrap())
+                    .collect()
+            })
+            .collect();
+
+        let lines: Vec<String> = lines.into_iter().rev().collect();
+        f.write_fmt(format_args!("===\n{}\n===", lines.join("\n")))
+    }
+}
+
 impl Pattern {
     fn summarize_p1(&self) -> i64 {
-        self.find_vertical_reflection().unwrap_or_else(|| {
-            (self.height as i64 - self.find_horizontal_reflection().expect("Oh no!")) * 100
-        })
+        self.try_summarize().next().unwrap()
     }
 
-    fn find_horizontal_reflection(&self) -> Option<i64> {
-        for y in 1..self.height as i64 {
-            let delta_lim = (self.height as i64 - y).min(y);
+    fn summarize_p2(&mut self) -> i64 {
+        let p1_val = self.try_summarize().next().unwrap();
 
-            if (0..delta_lim).all(move |delta| {
+        for x in 0..self.width as i64 {
+            for y in 0..self.height as i64 {
+                let pos = Pos::new(x, y);
+                self.smudge(pos);
+                let maybe_summary = self.try_summarize().filter(|v| *v != p1_val).next();
+                if let Some(v) = maybe_summary {
+                    return v;
+                } else {
+                    self.smudge(pos);
+                }
+            }
+        }
+
+        panic!("We should not get here!")
+    }
+
+    fn smudge(&mut self, p: Pos) {
+        let new = match *self.grid.get(&p).expect("Waaat?") {
+            '.' => '#',
+            '#' => '.',
+            _ => panic!("Oh crap!"),
+        };
+
+        self.grid.insert(p, new);
+    }
+
+    fn try_summarize(&self) -> impl Iterator<Item = i64> + '_ {
+        self.find_vertical_reflections().into_iter().chain(
+            self.find_horizontal_reflections()
+                .into_iter()
+                .map(|v| (self.height as i64 - v) * 100),
+        )
+    }
+
+    fn find_horizontal_reflections(&self) -> impl Iterator<Item = i64> + '_ {
+        (1..self.height as i64).filter(move |y| {
+            let delta_lim = (self.height as i64 - y).min(*y);
+
+            (0..delta_lim).all(move |delta| {
                 let left = self.get_row(y - delta - 1);
                 let right = self.get_row(y + delta);
 
                 left == right
-            }) {
-                return Some(y);
-            };
-        }
-
-        None
+            }) && delta_lim > 0
+        })
     }
 
-    fn find_vertical_reflection(&self) -> Option<i64> {
-        self.transpose().find_horizontal_reflection()
-    }
+    fn find_vertical_reflections(&self) -> impl Iterator<Item = i64> + '_ {
+        (1..self.width as i64).filter(move |x| {
+            let delta_lim = (self.width as i64 - x).min(*x);
 
-    fn transpose(&self) -> Self {
-        let grid = self
-            .grid
-            .iter()
-            .map(|(pos, char)| (Pos::new(pos.im, pos.re), *char))
-            .collect();
+            (0..delta_lim).all(move |delta| {
+                let left = self.get_col(x - delta - 1);
+                let right = self.get_col(x + delta);
 
-        let width = self.height;
-        let height = self.width;
-
-        Self {
-            grid,
-            width,
-            height,
-        }
+                left == right
+            }) && delta_lim > 0
+        })
     }
 
     fn get_row(&self, y: i64) -> Vec<char> {
