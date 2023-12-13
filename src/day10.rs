@@ -28,7 +28,7 @@ struct Pipe {
 
 impl Maze {
     fn from_input(input: &str) -> Self {
-        let mut pipes: HashMap<Position, Pipe> = crate::parse::char_grid_iter(input)
+        let mut pipes: HashMap<Position, Pipe> = crate::util::char_grid_iter(input)
             .map(|(x, y, pipe)| (Position::new(x as i64, y as i64), pipe))
             .collect();
 

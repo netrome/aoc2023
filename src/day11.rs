@@ -7,7 +7,7 @@ pub fn p2(input: &str) -> String {
 }
 
 fn solve(input: &str, expansion_factor: usize) -> String {
-    let stars: Vec<Pos> = crate::parse::char_grid_iter::<char>(input)
+    let stars: Vec<Pos> = crate::util::char_grid_iter::<char>(input)
         .filter(|(_, _, c)| *c == '#')
         .map(|(x, y, _)| Pos::new(x as f64, y as f64))
         .collect();

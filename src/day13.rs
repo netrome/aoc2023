@@ -136,8 +136,8 @@ impl FromStr for Pattern {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
 
-        let (width, height) = parse::grid_dimensions(s);
-        let grid = parse::char_grid_iter(s)
+        let (width, height) = util::grid_dimensions(s);
+        let grid = util::char_grid_iter(s)
             .map(|(x, y, c)| (Pos::new(x as i64, y as i64), c))
             .collect();
 
@@ -153,6 +153,6 @@ type Pos = num::Complex<i64>;
 
 use std::{collections::HashMap, str::FromStr};
 
-use crate::{parse, solution::Solution};
+use crate::{solution::Solution, util};
 inventory::submit!(Solution::new(13, 1, p1));
 inventory::submit!(Solution::new(13, 2, p2));
