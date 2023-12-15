@@ -1,11 +1,13 @@
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TupleArray<K, V, const N: usize>([Option<(K, V)>; N]);
 
-impl<K: PartialEq, V, const N: usize> TupleArray<K, V, N> {
+impl<K, V, const N: usize> TupleArray<K, V, N> {
     pub fn new() -> Self {
         Self(core::array::from_fn(|_| None))
     }
+}
 
+impl<K: PartialEq, V, const N: usize> TupleArray<K, V, N> {
     pub fn get(&self, key: &K) -> Option<&V> {
         self.0
             .iter()
@@ -46,6 +48,13 @@ impl<K: PartialEq, V, const N: usize> TupleArray<K, V, N> {
             });
 
         res.map(|(_, v)| v)
+    }
+
+    pub fn values(&self) -> impl Iterator<Item = &V> + '_ {
+        self.0
+            .iter()
+            .filter_map(|item| item.as_ref())
+            .map(|(_, v)| v)
     }
 }
 
