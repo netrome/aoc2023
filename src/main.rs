@@ -62,6 +62,7 @@ mod day7;
 mod day8;
 mod day9;
 mod solution;
+pub mod tuplearray;
 mod util;
 
 use clap::Parser;
