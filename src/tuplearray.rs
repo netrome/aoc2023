@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TupleArray<K, V, const N: usize>([Option<(K, V)>; N]);
 
 impl<K: PartialEq, V, const N: usize> TupleArray<K, V, N> {
@@ -29,7 +30,7 @@ impl<K: PartialEq, V, const N: usize> TupleArray<K, V, N> {
                 *slot = Some((key, val));
                 Ok(None)
             }
-            None => todo!(),
+            None => Err(Error::OutOfMemory),
         }
     }
 
@@ -46,18 +47,43 @@ impl<K: PartialEq, V, const N: usize> TupleArray<K, V, N> {
 
         res.map(|(_, v)| v)
     }
-
-    pub fn entry(&mut self, key: &K) -> Option<&mut V> {
-        self.0
-            .iter_mut()
-            .filter_map(|item| item.as_mut())
-            .find(|(k2, _)| k2 == key)
-            .map(|(_, value)| value)
-    }
 }
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
     #[error("Out of memory")]
     OutOfMemory,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn insertion_works() {
+        let mut array = TupleArray::<_, _, 5>::new();
+        array.insert("thirteen", 13).unwrap();
+        array.insert("dolphin", 42).unwrap();
+        array.insert("leet", 1337).unwrap();
+        array.insert("teel", 7331).unwrap();
+        array.insert("noon", 12).unwrap();
+        array.insert("boobs", 80085).unwrap_err();
+
+        assert_eq!(*array.get(&"leet").unwrap(), 1337);
+        assert_eq!(*array.get(&"dolphin").unwrap(), 42);
+        assert_eq!(array.insert("leet", 1338).unwrap().unwrap(), 1337);
+    }
+
+    #[test]
+    fn removal_works() {
+        let mut array = TupleArray::<_, _, 5>::new();
+        array.insert("leet", 1337).unwrap();
+        array.insert("dolphin", 42).unwrap();
+
+        assert!(array.remove(&"derp").is_none());
+        assert_eq!(array.remove(&"dolphin").unwrap(), 42);
+
+        assert_eq!(*array.get(&"leet").unwrap(), 1337);
+        assert!(array.get(&"dolphin").is_none());
+    }
 }
