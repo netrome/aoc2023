@@ -5,10 +5,47 @@ pub fn p1(input: &str) -> String {
 
     let (width, height) = util::grid_dimensions(input);
 
-    let mut seen = HashSet::new();
-    seen.insert(Beam::start(height as i64));
+    let ans = energized_tiles(
+        &grid,
+        Beam::start(height as i64),
+        width as i64,
+        height as i64,
+    );
 
-    let mut beams = vec![Beam::start(height as i64)];
+    format!("Energized tiles: {}", ans)
+}
+
+pub fn p2(input: &str) -> String {
+    let grid: Grid = util::char_grid_iter(input)
+        .map(|(x, y, c)| (Pos::new(x as i64, y as i64), c))
+        .collect();
+
+    let (width, height) = util::grid_dimensions(input);
+
+    let max = (0..width as i64)
+        .flat_map(|x| {
+            [
+                Beam::new(Pos::new(x, 0), NORTH),
+                Beam::new(Pos::new(x, height as i64 - 1), SOUTH),
+            ]
+        })
+        .chain((0..height as i64).flat_map(|y| {
+            [
+                Beam::new(Pos::new(0, y), EAST),
+                Beam::new(Pos::new(width as i64 - 1, y), WEST),
+            ]
+        }))
+        .map(|start| energized_tiles(&grid, start, width as i64, height as i64))
+        .max()
+        .unwrap();
+    format!("Max energization: {}", max)
+}
+
+fn energized_tiles(grid: &Grid, start: Beam, width: i64, height: i64) -> usize {
+    let mut seen = HashSet::new();
+    seen.insert(start.clone());
+
+    let mut beams = vec![start];
 
     while let Some(beam) = beams.pop() {
         for next in beam.advance(&grid).into_iter().filter_map(|n| n) {
@@ -21,11 +58,7 @@ pub fn p1(input: &str) -> String {
 
     let energized: HashSet<Pos> = seen.into_iter().map(|beam| beam.pos).collect();
 
-    format!("Energized tiles: {}", energized.len())
-}
-
-pub fn p2(_input: &str) -> String {
-    todo!();
+    energized.len()
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
@@ -40,7 +73,7 @@ impl Beam {
     }
 
     fn start(height: i64) -> Self {
-        let pos = Pos::new(0, height as i64 - 1);
+        let pos = Pos::new(0, height - 1);
         let dir = EAST;
 
         Self { pos, dir }
