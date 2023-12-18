@@ -202,7 +202,7 @@ impl PartialOrd for UltraCrucible {
     }
 }
 
-fn within_grid(pos: Pos, width: i64, height: i64) -> bool {
+fn within_grid(pos: Pos, _width: i64, height: i64) -> bool {
     pos.im >= 0 && pos.im < height && pos.re >= 0 && pos.re < height
 }
 
