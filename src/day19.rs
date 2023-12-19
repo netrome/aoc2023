@@ -8,20 +8,35 @@ pub fn p1(input: &str) -> String {
         .map(|w| (w.name.clone(), w))
         .collect();
 
-    let sum: u32 = it
+    let sum: u64 = it
         .next()
         .unwrap()
         .lines()
         .map(Part::parse)
         .filter(|part| is_accepted(&workflows, part))
-        .map(|part| part.0.values().sum::<u32>())
+        .map(|part| part.0.values().sum::<u64>())
         .sum();
 
     format!("Sum: {}", sum)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let workflows: HashMap<String, Workflow> = input
+        .trim()
+        .split("\n\n")
+        .next()
+        .unwrap()
+        .lines()
+        .map(Workflow::parse)
+        .map(|w| (w.name.clone(), w))
+        .collect();
+
+    let entry = "in".to_string();
+    let ranges = PartRanges::start();
+
+    let s = accepted_ranges(&workflows, ranges, entry);
+
+    format!("Sum: {}", s)
 }
 
 fn is_accepted(workflows: &HashMap<String, Workflow>, part: &Part) -> bool {
@@ -38,6 +53,25 @@ fn is_accepted(workflows: &HashMap<String, Workflow>, part: &Part) -> bool {
             return false;
         }
     }
+}
+
+fn accepted_ranges(
+    workflows: &HashMap<String, Workflow>,
+    ranges: PartRanges,
+    entry: String,
+) -> u64 {
+    let workflow = workflows.get(&entry).expect("Whaaat???");
+
+    workflow
+        .compute(ranges)
+        .into_iter()
+        .filter(|(_, ranges)| !ranges.is_empty())
+        .map(|(w, ranges)| match w.as_str() {
+            "A" => ranges.size(),
+            "R" => 0,
+            _ => accepted_ranges(workflows, ranges, w),
+        })
+        .sum()
 }
 
 #[derive(Debug)]
@@ -80,18 +114,37 @@ impl Workflow {
             .find_map(|rule| rule.try_match(part))
             .unwrap_or(self.fallback.clone())
     }
+
+    fn compute(&self, ranges: PartRanges) -> Vec<(String, PartRanges)> {
+        let (mut res, fallback) = self
+            .rules
+            .iter()
+            .fold((Vec::new(), ranges), |mut acc, rule| {
+                let (accepted, rejected) = acc.1.split_at(rule.left, rule.operator, rule.right);
+
+                if !accepted.is_empty() {
+                    acc.0.push((rule.dest.clone(), accepted))
+                };
+
+                (acc.0, rejected)
+            });
+
+        res.push((self.fallback.clone(), fallback));
+
+        res
+    }
 }
 
 #[derive(Debug)]
 struct Rule {
     left: char,
     operator: char,
-    right: u32,
+    right: u64,
     dest: String,
 }
 
 impl Rule {
-    fn new(left: char, operator: char, right: u32, dest: String) -> Self {
+    fn new(left: char, operator: char, right: u64, dest: String) -> Self {
         Self {
             left,
             operator,
@@ -120,7 +173,7 @@ impl Rule {
 }
 
 #[derive(Debug)]
-struct Part(HashMap<char, u32>);
+struct Part(HashMap<char, u64>);
 
 impl Part {
     fn parse(line: &str) -> Self {
@@ -136,6 +189,56 @@ impl Part {
                 })
                 .collect(),
         )
+    }
+}
+
+#[derive(Debug, Clone)]
+struct PartRanges(HashMap<char, Range>);
+
+impl PartRanges {
+    fn start() -> Self {
+        Self("xmas".chars().map(|c| (c, Range(1, 4000))).collect())
+    }
+
+    fn split_at(&self, c: char, op: char, val: u64) -> (PartRanges, PartRanges) {
+        let mut accepted = self.clone();
+        let mut rejected = self.clone();
+
+        let (accepted_range, rejected_range) = self.0.get(&c).unwrap().split_at(op, val);
+
+        accepted.0.insert(c, accepted_range);
+        rejected.0.insert(c, rejected_range);
+
+        (accepted, rejected)
+    }
+
+    fn is_empty(&self) -> bool {
+        self.0.values().any(|range| range.is_empty())
+    }
+
+    fn size(&self) -> u64 {
+        self.0.values().map(|range| range.size()).product()
+    }
+}
+
+#[derive(Debug, Clone)]
+struct Range(u64, u64);
+
+impl Range {
+    fn split_at(&self, op: char, val: u64) -> (Range, Range) {
+        match op {
+            '<' => (Self(self.0, val - 1), Self(val, self.1)),
+            '>' => (Self(val + 1, self.1), Self(self.0, val)),
+            _ => panic!("Unexpected op"),
+        }
+    }
+
+    fn size(&self) -> u64 {
+        self.1 - self.0 + 1
+    }
+
+    fn is_empty(&self) -> bool {
+        self.1 <= self.0
     }
 }
 
