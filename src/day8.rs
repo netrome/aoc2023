@@ -113,7 +113,7 @@ impl sscanf::RegexRepresentation for Label {
     const REGEX: &'static str = r"\w\w\w";
 }
 
-fn lowest_common_multiple(numbers: &[usize]) -> usize {
+pub fn lowest_common_multiple(numbers: &[usize]) -> usize {
     numbers
         .iter()
         .cloned()

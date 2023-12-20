@@ -4,7 +4,7 @@ pub fn p1(input: &str) -> String {
     let (mut low, mut high) = (0, 0);
 
     for _ in 0..1000 {
-        let (l2, h2) = push_button(&mut modules);
+        let (l2, h2, _) = push_button(&mut modules);
         low += l2;
         high += h2;
     }
@@ -12,8 +12,26 @@ pub fn p1(input: &str) -> String {
     format!("Product: {}", low * high)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let mut modules = parse_input(input);
+
+    // Brute force does not seem to do it. I guess I have to interpret the circuit
+    // Periods:
+    // - xj: 3733
+    // - kz: 3911
+    // - qs: 4019
+    // - km: 4093
+    //for idx in 1.. {
+    //    let (_, _, got_pulse) = push_button(&mut modules);
+
+    //    if got_pulse {
+    //        println!("Pulse at: {}", idx);
+    //    }
+    //}
+
+    let ans = day8::lowest_common_multiple(&[3733, 3911, 4019, 4093]);
+
+    format!("Ans: {}", ans)
 }
 
 fn parse_input(input: &str) -> HashMap<String, Module> {
@@ -53,9 +71,11 @@ fn parse_input(input: &str) -> HashMap<String, Module> {
         .collect()
 }
 
-fn push_button(modules: &mut HashMap<String, Module>) -> (usize, usize) {
+fn push_button(modules: &mut HashMap<String, Module>) -> (usize, usize, bool) {
     let mut pulse_q = VecDeque::new();
     let (mut low, mut high) = (0, 0);
+    let mut gq_got_high_pulse = false;
+
     pulse_q.push_back(Pulse {
         from: "Elves".to_string(),
         to: "broadcaster".to_string(),
@@ -63,6 +83,11 @@ fn push_button(modules: &mut HashMap<String, Module>) -> (usize, usize) {
     });
 
     while let Some(pulse) = pulse_q.pop_front() {
+        if &pulse.to == "gq" && pulse.is_high {
+            println!("Pulse from: {:?}", pulse.from);
+            gq_got_high_pulse = true
+        };
+
         if pulse.is_high {
             high += 1;
         } else {
@@ -78,7 +103,7 @@ fn push_button(modules: &mut HashMap<String, Module>) -> (usize, usize) {
         }
     }
 
-    (low, high)
+    (low, high, gq_got_high_pulse)
 }
 
 #[derive(Debug)]
@@ -183,6 +208,6 @@ use std::collections::{HashMap, VecDeque};
 
 use regex::Regex;
 
-use crate::solution::Solution;
+use crate::{day8, solution::Solution};
 inventory::submit!(Solution::new(20, 1, p1));
 inventory::submit!(Solution::new(20, 2, p2));
