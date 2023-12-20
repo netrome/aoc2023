@@ -4,7 +4,7 @@ pub fn p1(input: &str) -> String {
     let (mut low, mut high) = (0, 0);
 
     for _ in 0..1000 {
-        let (l2, h2, _) = push_button(&mut modules);
+        let (l2, h2, _) = push_button(&mut modules, "");
         low += l2;
         high += h2;
     }
@@ -13,23 +13,26 @@ pub fn p1(input: &str) -> String {
 }
 
 pub fn p2(input: &str) -> String {
-    let mut modules = parse_input(input);
+    let modules = parse_input(input);
+    let empty = String::new();
 
-    // Brute force does not seem to do it. I guess I have to interpret the circuit
-    // Periods:
-    // - xj: 3733
-    // - kz: 3911
-    // - qs: 4019
-    // - km: 4093
-    //for idx in 1.. {
-    //    let (_, _, got_pulse) = push_button(&mut modules);
+    let aggregator = modules
+        .values()
+        .find(|m| m.dest.get(0).unwrap_or(&empty) == "rx")
+        .expect("No aggregator node");
 
-    //    if got_pulse {
-    //        println!("Pulse at: {}", idx);
-    //    }
-    //}
+    let sub_cycles: Vec<String> = modules
+        .values()
+        .filter(|m| m.dest.contains(&aggregator.name))
+        .map(|m| m.name.clone())
+        .collect();
 
-    let ans = day8::lowest_common_multiple(&[3733, 3911, 4019, 4093]);
+    let cycles: Vec<usize> = sub_cycles
+        .into_iter()
+        .map(|cycle| find_period(modules.clone(), &cycle))
+        .collect();
+
+    let ans = day8::lowest_common_multiple(&cycles);
 
     format!("Ans: {}", ans)
 }
@@ -71,10 +74,22 @@ fn parse_input(input: &str) -> HashMap<String, Module> {
         .collect()
 }
 
-fn push_button(modules: &mut HashMap<String, Module>) -> (usize, usize, bool) {
+fn find_period(mut modules: HashMap<String, Module>, monitor: &str) -> usize {
+    for n in 1.. {
+        let (_, _, is_done) = push_button(&mut modules, monitor);
+
+        if is_done {
+            return n;
+        }
+    }
+
+    panic!("Unreachable!")
+}
+
+fn push_button(modules: &mut HashMap<String, Module>, monitor: &str) -> (usize, usize, bool) {
     let mut pulse_q = VecDeque::new();
     let (mut low, mut high) = (0, 0);
-    let mut gq_got_high_pulse = false;
+    let mut got_high_pulse = false;
 
     pulse_q.push_back(Pulse {
         from: "Elves".to_string(),
@@ -83,9 +98,8 @@ fn push_button(modules: &mut HashMap<String, Module>) -> (usize, usize, bool) {
     });
 
     while let Some(pulse) = pulse_q.pop_front() {
-        if &pulse.to == "gq" && pulse.is_high {
-            println!("Pulse from: {:?}", pulse.from);
-            gq_got_high_pulse = true
+        if &pulse.from == monitor && pulse.is_high {
+            got_high_pulse = true
         };
 
         if pulse.is_high {
@@ -103,10 +117,10 @@ fn push_button(modules: &mut HashMap<String, Module>) -> (usize, usize, bool) {
         }
     }
 
-    (low, high, gq_got_high_pulse)
+    (low, high, got_high_pulse)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Module {
     name: String,
     dest: Vec<String>,
@@ -136,14 +150,14 @@ impl Module {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum Variant {
     Broadcast,
     FlipFlop(FlipFlop),
     Conjunction(Conjunction),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct FlipFlop(bool);
 
 impl FlipFlop {
@@ -157,7 +171,7 @@ impl FlipFlop {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Conjunction(HashMap<String, bool>);
 
 impl Conjunction {
