@@ -32,7 +32,48 @@ pub fn p2(input: &str) -> String {
         .collect();
 
     while bricks.iter_mut().any(|b| b.try_move(&mut world, -1 * Z)) {}
-    todo!();
+
+    let graph = dependencies(&bricks, &world);
+
+    let mut sum = 0;
+
+    for ignore in 0..bricks.len() {
+        for brick_id in 0..bricks.len() {
+            if brick_id != ignore && !has_path_to_floor(brick_id, &bricks, &graph, ignore) {
+                sum += 1
+            }
+        }
+    }
+
+    format!("Sum of bricks that would fall: {}", sum)
+}
+
+fn dependencies(bricks: &[Brick], world: &HashMap<Pos, usize>) -> HashMap<usize, Vec<usize>> {
+    bricks.iter().fold(HashMap::new(), |mut acc, brick| {
+        acc.insert(
+            brick.id,
+            brick.neighbors(&world, -1 * Z).into_iter().collect(),
+        );
+        acc
+    })
+}
+
+fn has_path_to_floor(
+    brick_id: usize,
+    bricks: &[Brick],
+    graph: &HashMap<usize, Vec<usize>>,
+    ignore: usize,
+) -> bool {
+    let deps = graph.get(&brick_id).unwrap();
+
+    if deps.is_empty() {
+        return bricks.get(brick_id).unwrap().is_on_floor();
+    } else {
+        return deps
+            .into_iter()
+            .filter(|id| **id != ignore)
+            .any(|id| has_path_to_floor(*id, bricks, graph, ignore));
+    }
 }
 
 fn parse_input(input: &str) -> Vec<Brick> {
@@ -100,6 +141,10 @@ impl Brick {
         } else {
             false
         }
+    }
+
+    fn is_on_floor(&self) -> bool {
+        self.start.z == 1 || self.stop.z == 1
     }
 }
 
