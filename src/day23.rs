@@ -7,41 +7,68 @@ pub fn p1(input: &str) -> String {
     let w = w as i64;
     let h = h as i64;
 
-    let before = Pos::new(1, h);
     let start = Pos::new(1, h - 1);
     let end = Pos::new(w - 2, 0);
 
-    let hikes = find_hikes(&map, vec![before, start], end);
-    let longest = hikes.iter().map(|hike| hike.len() - 2).max().unwrap();
+    let longest = find_hikes(&map, [start].into_iter().collect(), start, end)
+        .into_iter()
+        .max()
+        .unwrap();
 
     format!("Longest hike: {}", longest)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let map: Map = util::char_grid_iter(input)
+        .map(|(x, y, c)| {
+            let c2 = match c {
+                '#' => '#',
+                _ => '.',
+            };
+            (Pos::new(x as i64, y as i64), c2)
+        })
+        .collect();
+
+    let (w, h) = util::grid_dimensions(input);
+    let w = w as i64;
+    let h = h as i64;
+
+    let start = Pos::new(1, h - 1);
+    let end = Pos::new(w - 2, 0);
+
+    let longest = find_hikes(&map, [start].into_iter().collect(), start, end)
+        .into_iter()
+        .max()
+        .unwrap();
+
+    format!("Longest hike: {}", longest)
 }
 
-fn find_hikes(map: &Map, history: Vec<Pos>, dest: Pos) -> Vec<Vec<Pos>> {
-    let from = history.last().expect("Empty history, should not happen");
-    let before = history
-        .iter()
-        .rev()
-        .nth(1)
-        .expect("History should always have minimum two elements");
-
-    possible_steps(map, *from)
+fn find_hikes(map: &Map, mut seen: HashSet<Pos>, from: Pos, dest: Pos) -> Vec<usize> {
+    let next_steps: Vec<Pos> = possible_steps(map, from)
         .into_iter()
-        .filter(|step| step != before)
-        .flat_map(|step| {
-            let mut hist = history.clone();
-            hist.push(step);
-            if step == dest {
-                vec![hist]
+        .filter(|step| !seen.contains(step))
+        .collect();
+
+    match next_steps.as_slice() {
+        [] => vec![],
+        [step] => {
+            if *step == dest {
+                vec![seen.len()]
             } else {
-                find_hikes(map, hist, dest)
+                seen.insert(*step);
+                find_hikes(map, seen, *step, dest)
             }
-        })
-        .collect()
+        }
+        steps => steps
+            .into_iter()
+            .flat_map(|step| {
+                let mut s2 = seen.clone();
+                s2.insert(*step);
+                find_hikes(map, s2, *step, dest)
+            })
+            .collect(),
+    }
 }
 
 fn possible_steps(map: &Map, from: Pos) -> Vec<Pos> {
@@ -70,7 +97,7 @@ static SOUTH: Dir = Dir::new(0, -1);
 static EAST: Dir = Dir::new(1, 0);
 static WEST: Dir = Dir::new(-1, 0);
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use num::Complex;
 
