@@ -28,8 +28,27 @@ pub fn p1(input: &str) -> String {
     format!("Number of intersections: {}", intersections)
 }
 
-pub fn p2(_input: &str) -> String {
-    todo!();
+pub fn p2(input: &str) -> String {
+    let hailstones: Vec<_> = input.trim().lines().map(HailStone::from_line).collect();
+
+    let mut equations = Vec::new();
+
+    for (i, h) in hailstones.iter().enumerate().take(3) {
+        equations.push(format!(
+            "x_1 + t_{}v_1 = {} + ({}) * t_{}",
+            i, h.pos.x, h.velocity.x, i
+        ));
+        equations.push(format!(
+            "x_2 + t_{}v_2 = {} + ({}) t_{}",
+            i, h.pos.y, h.velocity.y, i
+        ));
+        equations.push(format!(
+            "x_3 + t_{}v_3 = {} + ({}) t_{}",
+            i, h.pos.z, h.velocity.z, i
+        ));
+    }
+
+    equations.join(",")
 }
 
 #[derive(Debug, Clone)]
@@ -86,6 +105,14 @@ impl HailStone {
         }
     }
 }
+
+// x + vxt0 = x0 + vx0t0
+// y + vyt0 = y0 + vy0t0
+// z + vzt0 = z0 + vz0t0
+// x + vxt1 = x1 + vx1t0
+// y + vyt1 = y1 + vy1t0
+// z + vzt1 = z1 + vz1t0
+// ...
 
 #[derive(Clone, Copy, Debug, PartialEq, derive_more::Add, derive_more::Sub)]
 struct Vector3 {
