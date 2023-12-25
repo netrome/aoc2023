@@ -67,3 +67,5 @@ pub mod tuplearray;
 mod util;
 
 use clap::Parser;
+
+extern crate openblas_src;
